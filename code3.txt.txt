@@ -1,0 +1,63 @@
+function [IQA, B, L] = jpeg_quality(  img_dst)
+% imput:gray image
+% out put: IQA: the result; B: the blockiness; L: the luminance change
+
+% By: Yibing Zhan
+% zybjy@mail.ustc.edu.cn
+
+% The code can be modified, rewritten and used for academic purposes
+% without obtaining permission of the authors.
+
+% Please refer to the following paper:
+% Yibing Zhan and Rong Zhang, 
+% "No-Reference JPEG Image Quality Assessment Based on Blockiness and Luminance Change", 
+% in IEEE Signal Processing Letters.
+
+img = double(img_dst);
+F1 = [ -1 1 ];
+F2 = F1';
+[m n]  = size(img);
+H_dst = abs(conv2(img, F1, 'valid'));
+V_dst = abs(conv2(img, F2, 'valid'));
+m1 = floor(m/8);
+n1 = floor(n/8);
+
+map1 = [];
+map2 = [];
+len = 4;
+for i = 1:m1-2
+    for j = 1:n1-2
+        value = sum(H_dst(i*8+1:i*8+8,j*8-len:j*8+8+len))/8;
+        L_h = sum(value(len+2:len+8))/7;
+  
+        P_h = sum(value(1:len)+value(len+2:len+1+len)+value(9:len+8)+value(len+10:len+9+len))/4/len;
+      
+        B_h = value(1+len)+value(9+len);
+      
+        
+        value = sum(V_dst(i*8-len:i*8+8+len,j*8+1:j*8+8),2)/8;
+        L_v = sum(value(len+2:len+8))/7;
+      
+        P_v = sum(value(1:len)+value(len+2:len+1+len)+value(9:len+8)+value(len+10:len+9+len))/4/len;
+ 
+        B_v = value(1+len)+value(9+len);
+       
+        
+        B = (B_h+B_v)/2-(P_h+P_v);
+        L = L_v+L_h;
+        
+       
+        lab = abs(B)+abs(L);
+              
+        if lab > 0
+            map1 = [map1 B];         
+            map2 = [map2 L];   
+        end    
+    end 
+end
+B = mean2(map1);
+L = mean2(map2);
+IQA = B./L.^0.215;
+
+
+
